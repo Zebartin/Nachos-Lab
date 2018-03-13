@@ -16,12 +16,17 @@
 #include "stats.h"
 #include "timer.h"
 
+#include "string.h"
+
+#define MaxThread 128
+
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
 						// called before anything else
 extern void Cleanup();				// Cleanup, called when
 						// Nachos is done.
 
+extern bool tid_flag[MaxThread];
 extern Thread *currentThread;			// the thread holding the CPU
 extern Thread *threadToBeDestroyed;  		// the thread that just finished
 extern Scheduler *scheduler;			// the ready list
