@@ -67,7 +67,11 @@ ThreadTest1()
 
     Thread *t = new Thread("forked thread");
 
+<<<<<<< HEAD
     t->Fork(SimpleThread, (void*)(t->getTid()));
+=======
+    t->Fork(SimpleThread, (void*)(t.getTid()));
+>>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
     SimpleThread(0);
 }
 
@@ -84,9 +88,16 @@ ThreadTest()
     ThreadTest1();
     break;
     default:
+<<<<<<< HEAD
     ThreadTest0();
     //printf("No test specified.\n");
     break;
+=======
+    for(int i = 0; i < testnum; ++i)
+        ThreadTest1();
+	//printf("No test specified.\n");
+	break;
+>>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
     }
 }
 

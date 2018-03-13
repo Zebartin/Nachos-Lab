@@ -109,10 +109,17 @@ class Thread {
  
     // Add uid & tid for Lab 1
     int uid, tid;   
+<<<<<<< HEAD
     int* stack;             // Bottom of the stack 
                     // NULL if this is the main thread
                     // (If NULL, don't deallocate stack)
     ThreadStatus status;        // ready, running or blocked
+=======
+    int* stack; 	 		// Bottom of the stack 
+					// NULL if this is the main thread
+					// (If NULL, don't deallocate stack)
+    ThreadStatus status;		// ready, running or blocked
+>>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
     char* name;
 
     void StackAllocate(VoidFunctionPtr func, void *arg);

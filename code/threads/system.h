@@ -16,7 +16,11 @@
 #include "stats.h"
 #include "timer.h"
 
+<<<<<<< HEAD
 #include "string.h"
+=======
+#incldue "string.h"
+>>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
 
 #define MaxThread 128
 
