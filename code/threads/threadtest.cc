@@ -30,8 +30,8 @@ SimpleThread(int which)
 {
     int num;
     
-    for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d times\n", which, num);
+    for (num = 0; num < 2; num++) {
+        printf("*** thread %d looped %d times\n", which, num);
         currentThread->Yield();
     }
 }
@@ -49,7 +49,7 @@ ThreadTest1()
 
     Thread *t = new Thread("forked thread");
 
-    t->Fork(SimpleThread, (void*)1);
+    t->Fork(SimpleThread, (void*)(t.getTid()));
     SimpleThread(0);
 }
 
@@ -66,7 +66,9 @@ ThreadTest()
 	ThreadTest1();
 	break;
     default:
-	printf("No test specified.\n");
+    for(int i = 0; i < testnum; ++i)
+        ThreadTest1();
+	//printf("No test specified.\n");
 	break;
     }
 }

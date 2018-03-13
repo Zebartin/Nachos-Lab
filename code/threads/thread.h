@@ -100,11 +100,15 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
+    int getUid() { return uid; }
+    int getTid() { return tid; }
     void Print() { printf("%s, ", name); }
 
   private:
     // some of the private data for this class is listed above
-    
+ 
+    // Add uid & tid for Lab 1
+    int uid, tid;   
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)

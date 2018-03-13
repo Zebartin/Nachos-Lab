@@ -38,6 +38,13 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    //allocate thread id
+    for(int i = 0; i < MaxThread; ++i)
+        if(tid_flag[i] == false){
+            tid_flag[i] = true;
+            tid = i;
+            break;
+        }
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
@@ -60,8 +67,11 @@ Thread::~Thread()
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
     ASSERT(this != currentThread);
+
+    //deallocate thread id
+    tid_flag[tid] = false;
     if (stack != NULL)
-	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
+	   DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 }
 
 //----------------------------------------------------------------------
