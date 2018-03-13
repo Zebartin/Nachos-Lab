@@ -12,7 +12,6 @@
 // These are all initialized and de-allocated by this file.
 
 bool tid_flag[MaxThread];       // 0 means that the id is not occupied
-<<<<<<< HEAD
 Thread *currentThread;          // the thread we are running now
 Thread *threadToBeDestroyed;        // the thread that just finished
 Scheduler *scheduler;           // the ready list
@@ -20,15 +19,6 @@ Interrupt *interrupt;           // interrupt status
 Statistics *stats;          // performance metrics
 Timer *timer;               // the hardware timer device,
                     // for invoking context switches
-=======
-Thread *currentThread;			// the thread we are running now
-Thread *threadToBeDestroyed;  		// the thread that just finished
-Scheduler *scheduler;			// the ready list
-Interrupt *interrupt;			// interrupt status
-Statistics *stats;			// performance metrics
-Timer *timer;				// the hardware timer device,
-					// for invoking context switches
->>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
@@ -104,10 +94,6 @@ Initialize(int argc, char **argv)
 #endif
     
     memset(tid_flag, 0, sizeof tid_flag);
-<<<<<<< HEAD
-=======
-    tid_flag[0] = true;     // main thread
->>>>>>> 1a86e3062f8874e966b19f5f399c48750866cd50
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
     argCount = 1;

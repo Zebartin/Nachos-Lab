@@ -50,7 +50,7 @@ Thread::Thread(char* threadName)
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
-    printf("thread %d is just created!\n", tid);
+    printf("thread %d is created!\n", tid);
 }
 
 //----------------------------------------------------------------------
