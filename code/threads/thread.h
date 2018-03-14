@@ -81,7 +81,7 @@ class Thread {
     void *machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
-    Thread(char* debugName);        // initialize a Thread 
+    static Thread *GenThread(char* debugName);    // hide the real constructor
     ~Thread();              // deallocate a Thread
                     // NOTE -- thread being deleted
                     // must not be running when delete 
@@ -102,19 +102,31 @@ class Thread {
     char* getName() { return (name); }
     int getUid() { return uid; }
     int getTid() { return tid; }
+    char* getStatus() {
+        switch(status){
+            case JUST_CREATED: return "just created";
+            case RUNNING: return "running";
+            case READY: return "ready";
+            case BLOCKED: return "blocked";
+            default: return "unknown";
+        }
+    }
     void Print() { printf("%s, ", name); }
 
   private:
     // some of the private data for this class is listed above
  
+    static int threadNum;
     // Add uid & tid for Lab 1
-    int uid, tid;   
+    int uid, tid;
+    class TooManyThreads{};
     int* stack;             // Bottom of the stack 
                     // NULL if this is the main thread
                     // (If NULL, don't deallocate stack)
     ThreadStatus status;        // ready, running or blocked
     char* name;
 
+    Thread(char* debugName);
     void StackAllocate(VoidFunctionPtr func, void *arg);
                         // Allocate a stack for thread.
                     // Used internally by Fork()

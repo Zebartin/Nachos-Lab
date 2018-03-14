@@ -87,7 +87,7 @@ controllers (int arg) {
 void
 ElevatorSelfTest () {
     ElevatorInspector *inspector = new ElevatorInspector();
-    Thread *controller = new Thread("controller");
+    Thread *controller = Thread::GenThread("controller");
     
     controller->Fork(ControllerTest, inspector);
     inspector->RiderTest();

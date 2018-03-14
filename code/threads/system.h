@@ -26,9 +26,9 @@ extern void Initialize(int argc, char **argv); 	// Initialization,
 extern void Cleanup();				// Cleanup, called when
 						// Nachos is done.
 
-extern bool tid_flag[MaxThread];
-extern Thread *currentThread;			// the thread holding the CPU
+extern Thread *threadPtr[MaxThread];     // Pointers to all threads, NULL if not occupied
 extern Thread *threadToBeDestroyed;  		// the thread that just finished
+extern Thread *currentThread;			// the thread holding the CPU
 extern Scheduler *scheduler;			// the ready list
 extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics

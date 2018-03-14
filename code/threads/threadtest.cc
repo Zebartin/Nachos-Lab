@@ -37,9 +37,8 @@ SimpleThread(int which)
 }
 
 //----------------------------------------------------------------------
-// ThreadTest1
-//  Set up a ping-pong between two threads, by forking a thread 
-//  to call SimpleThread, and then calling SimpleThread ourselves.
+// ThreadTest0
+// Act similiarly to ThreadTest1, but with more threads.
 //----------------------------------------------------------------------
 
 void
@@ -48,7 +47,7 @@ ThreadTest0()
     DEBUG('t', "Entering ThreadTest0");
 
     for(int i = 0; i < testnum; ++i){
-        Thread *t = new Thread("forked thread");
+        Thread *t = Thread::GenThread("forked thread");
         t->Fork(SimpleThread, (void*)(t->getTid()));
     }
     SimpleThread(currentThread->getTid());
@@ -65,7 +64,7 @@ ThreadTest1()
 {
     DEBUG('t', "Entering ThreadTest1");
 
-    Thread *t = new Thread("forked thread");
+    Thread *t = Thread::GenThread("forked thread");
 
     t->Fork(SimpleThread, (void*)(t->getTid()));
     SimpleThread(0);

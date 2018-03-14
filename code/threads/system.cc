@@ -11,7 +11,7 @@
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
 
-bool tid_flag[MaxThread];       // 0 means that the id is not occupied
+Thread *threadPtr[MaxThread];     // Pointers to all threads, NULL if not occupied
 Thread *currentThread;          // the thread we are running now
 Thread *threadToBeDestroyed;        // the thread that just finished
 Scheduler *scheduler;           // the ready list
@@ -92,8 +92,7 @@ Initialize(int argc, char **argv)
     double rely = 1;        // network reliability
     int netname = 0;        // UNIX socket name
 #endif
-    
-    memset(tid_flag, 0, sizeof tid_flag);
+    memset(threadPtr, 0, sizeof threadPtr);
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
     argCount = 1;
@@ -144,7 +143,7 @@ Initialize(int argc, char **argv)
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
     // object to save its state. 
-    currentThread = new Thread("main");     
+    currentThread = Thread::GenThread("main");     
     currentThread->setStatus(RUNNING);
 
     interrupt->Enable();

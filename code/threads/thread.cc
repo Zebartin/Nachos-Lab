@@ -25,6 +25,23 @@
                     // stack overflows
 #define DefaultUid 0
 
+int Thread::threadNum = 0;
+//----------------------------------------------------------------------
+// Thread::GenThread
+//  Check if the number of threads comes to the limit.
+//----------------------------------------------------------------------
+
+Thread *
+Thread::GenThread(char* threadName)
+{
+    if(threadNum < MaxThread)
+        return new Thread(threadName);
+    else{
+        printf("No more thread is allowed. MAX: %d\n", MaxThread);
+        throw TooManyThreads();
+    }
+}
+
 //----------------------------------------------------------------------
 // Thread::Thread
 //  Initialize a thread control block, so that we can then call
@@ -42,15 +59,16 @@ Thread::Thread(char* threadName)
     //allocate thread id
     uid = DefaultUid;
     for(int i = 0; i < MaxThread; ++i)
-        if(tid_flag[i] == false){
-            tid_flag[i] = true;
+        if(threadPtr[i] == NULL){
+            threadPtr[i] = this;
             tid = i;
+            threadNum++;
             break;
         }
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
-    printf("thread %d is created!\n", tid);
+    //printf("thread %d is created!\n", tid);
 }
 
 //----------------------------------------------------------------------
@@ -71,8 +89,10 @@ Thread::~Thread()
 
     ASSERT(this != currentThread);
 
+    threadNum--;
     //deallocate thread id
-    tid_flag[tid] = false;
+    threadPtr[tid] = NULL;
+    //printf("thread %d is deleted!\n", tid);
     if (stack != NULL)
        DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 }
