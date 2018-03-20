@@ -55,6 +55,7 @@
 
 #ifdef THREADS
 extern int testnum;
+extern bool tsflag;
 #endif
 
 // External functions used by this file
@@ -97,14 +98,19 @@ main(int argc, char **argv)
         testnum = atoi(argv[1]);
         argCount++;
         break;
+      case 's':
+      	tsflag = true;
+      	break;
       default:
         testnum = 1;
+        tsflag = false;
         break;
       }
     }
 
     ThreadTest();
-    ThreadStatus();
+    if(tsflag)
+	    ThreadStatus();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
