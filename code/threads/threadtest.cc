@@ -106,7 +106,7 @@ PreemptiveThread1(int tid) {
         printf("*** thread %d looped %d times(priority: %d)\n",
             tid, i, currentThread->getPriority());
         if(i == 1){
-            Thread *t = Thread::GenThread("preemptive thread 2", 7);
+            Thread *t = Thread::GenThread("preemptive thread 2", 5);
             t->Fork(PreemptiveThread2, (void*)(t->getTid()));
         }
     }
@@ -120,7 +120,7 @@ PreemptiveThread0(int tid) {
         printf("*** thread %d looped %d times(priority: %d)\n",
             tid, i, currentThread->getPriority());
         if(i == 1){
-            Thread *t = Thread::GenThread("preemptive thread 1", 5);
+            Thread *t = Thread::GenThread("preemptive thread 1", 7);
             t->Fork(PreemptiveThread1, (void*)(t->getTid()));
         }
     }
