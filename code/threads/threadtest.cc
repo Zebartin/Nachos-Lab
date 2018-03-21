@@ -41,15 +41,15 @@ SimpleThread(int which)
 }
 
 //----------------------------------------------------------------------
-// ThreadTest1
+// ThreadTest0
 //  Set up a ping-pong between two threads, by forking a thread
 //  to call SimpleThread, and then calling SimpleThread ourselves.
 //----------------------------------------------------------------------
 
 void
-ThreadTest1()
+ThreadTest0()
 {
-    DEBUG('t', "Entering ThreadTest1");
+    DEBUG('t', "Entering ThreadTest0");
 
     if(tsflag)
         ThreadStatus();
@@ -60,14 +60,14 @@ ThreadTest1()
 }
 
 //----------------------------------------------------------------------
-// ThreadTestLab1
+// ThreadTest1
 // Act similiarly to ThreadTest1, but with more threads.
 //----------------------------------------------------------------------
 
 void
-ThreadTestLab1()
+ThreadTest1()
 {
-    DEBUG('t', "Entering ThreadTestLab1");
+    DEBUG('t', "Entering ThreadTest1");
 
     Thread *t;
     for(int i = 0; i < 10; ++i){
@@ -85,8 +85,8 @@ ThreadTestLab1()
 }
 
 //----------------------------------------------------------------------
-// ThreadTestLab2
-// Act similiarly to ThreadTest1, but with more threads.
+// ThreadTest2
+// Test for lab 2 ex 3.
 //----------------------------------------------------------------------
 
 void
@@ -106,7 +106,7 @@ PreemptiveThread1(int tid) {
         printf("*** thread %d looped %d times(priority: %d)\n",
             tid, i, currentThread->getPriority());
         if(i == 1){
-            Thread *t = Thread::GenThread("preemptive thread 2", 5);
+            Thread *t = Thread::GenThread("preemptive thread 2", 7);
             t->Fork(PreemptiveThread2, (void*)(t->getTid()));
         }
     }
@@ -120,19 +120,49 @@ PreemptiveThread0(int tid) {
         printf("*** thread %d looped %d times(priority: %d)\n",
             tid, i, currentThread->getPriority());
         if(i == 1){
-            Thread *t = Thread::GenThread("preemptive thread 1", 7);
+            Thread *t = Thread::GenThread("preemptive thread 1", 5);
             t->Fork(PreemptiveThread1, (void*)(t->getTid()));
         }
     }
 }
 
 void
-ThreadTestLab2()
+ThreadTest2()
 {
-    DEBUG('t', "Entering ThreadTestLab2");
+    DEBUG('t', "Entering ThreadTest2");
 
     Thread *t = Thread::GenThread("preemptive thread 0", 1);
     t->Fork(PreemptiveThread0, (void*)(t->getTid()));
+}
+
+//----------------------------------------------------------------------
+// ThreadTest3
+// Test for lab 2 cha 1.
+//----------------------------------------------------------------------
+
+void
+SimpleThread1(int times)
+{
+    int num;
+
+    for (num = 0; num < times; ++num) {
+        printf("*** thread %d looped %d times(priority: %d)\n",
+            currentThread->getTid(), num, currentThread->getPriority());
+        interrupt->OneTick();
+    }
+}
+
+void
+ThreadTest3()
+{
+    DEBUG('t', "Entering ThreadTest3");
+
+    Thread *t = Thread::GenThread("rr thread 0");
+    t->Fork(SimpleThread1, 20);
+    t = Thread::GenThread("rr thread 1");
+    t->Fork(SimpleThread1, 15);
+    t = Thread::GenThread("rr thread 2");
+    t->Fork(SimpleThread1, 35);
 }
 
 //----------------------------------------------------------------------
@@ -145,13 +175,16 @@ ThreadTest()
 {
     switch (testnum) {
     case 0:
-        ThreadTest1();
+        ThreadTest0();
         break;
     case 1:
-        ThreadTestLab1();
+        ThreadTest1();
         break;
     case 2:
-        ThreadTestLab2();
+        ThreadTest2();
+        break;
+    case 3:
+        ThreadTest3();
         break;
     default:
         printf("No test specified.\n");
