@@ -181,4 +181,5 @@ void Barrier::Stall(){
         printf("Wake up, everybody!\n");
         conb->Broadcast(conditionLock);
     }
+    conditionLock->Release();
 }
