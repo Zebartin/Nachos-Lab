@@ -11,11 +11,24 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "synch.h"
 #include "elevatortest.h"
 
 // testnum is set in main.cc
 int testnum = 0;
 bool tsflag = false;
+
+// for lab3
+#define N 10
+int count;
+List *items;
+Semaphore *mutex;
+Semaphore *empty;
+Semaphore *full;
+Lock *lock;
+Condition *condc;
+Condition *condp;
+Barrier *barrier;
 
 extern void ThreadStatus();
 
@@ -166,6 +179,131 @@ ThreadTest3()
 }
 
 //----------------------------------------------------------------------
+// ThreadTest4
+// Producer-Consumer with semaphores
+//----------------------------------------------------------------------
+void producer(int id){
+    int i = 0;
+    while(i++ < N){
+        empty->P();
+        mutex->P();
+        items->Append(i + (id-1)*(N>>1));
+        printf("producer%d inserts %d\n", id, i + (id-1)*(N>>1));
+        mutex->V();
+        full->V();
+    }
+}
+void consumer(int id){
+    int t, i = 0;
+    while(i++ < N){
+        full->P();
+        mutex->P();
+        t = (int)items->Remove();
+        printf("consumer%d removes %d\n", id, t);
+        mutex->V();
+        empty->V();
+    }
+}
+void
+ThreadTest4()
+{
+    DEBUG('t', "Entering ThreadTest4");
+    items = new List;
+    mutex = new Semaphore("mutex", 1);
+    empty = new Semaphore("empty", N);
+    full = new Semaphore("full", 0);
+    Thread *p1 = Thread::GenThread("producer 1");
+    Thread *p2 = Thread::GenThread("producer 2");
+    Thread *c1 = Thread::GenThread("consumer 1");
+    Thread *c2 = Thread::GenThread("consumer 2");
+    p1->Fork(producer, 1);
+    p2->Fork(producer, 2);
+    c1->Fork(consumer, 1);
+    c2->Fork(consumer, 2);
+}
+//----------------------------------------------------------------------
+// ThreadTest5
+// Producer-Consumer with condition variable
+//----------------------------------------------------------------------
+void producerprime(int id){
+    int i = 0;
+    while(i++ < N){
+        lock->Acquire();
+        while(count == N){
+            printf("producer%d: No place. Wait.\n", id);
+            condp->Wait(lock);  //生产者等待
+        }
+        items->Append(i + (id-1)*N);
+        count++;
+        printf("producer%d inserts %d\n", id, i + (id-1)*N);
+        if(count == 1)
+            condc->Signal(lock);    //唤醒消费者
+        lock->Release();
+    }
+}
+void consumerprime(int id){
+    int t, i = 0;
+    while(i++ < N){
+        lock->Acquire();
+        while(count == 0){
+            printf("consumer%d: No production. Wait.\n", id);
+            condc->Wait(lock);  //消费者等待
+        }
+        t = (int)items->Remove();
+        count--;
+        printf("consumer%d removes %d\n", id, t);
+        if(count == N - 1)
+            condp->Signal(lock);    //唤醒生产者
+        lock->Release();
+    }
+}
+void
+ThreadTest5()
+{
+    DEBUG('t', "Entering ThreadTest5");
+    count = 0;
+    items = new List;
+    lock = new Lock("mutex");
+    condc = new Condition("consumer");
+    condp = new Condition("producer");
+    Thread *p1 = Thread::GenThread("producer 1");
+    Thread *p2 = Thread::GenThread("producer 2");
+    Thread *c1 = Thread::GenThread("consumer 1");
+    Thread *c2 = Thread::GenThread("consumer 2");
+    p1->Fork(producerprime, 1);
+    p2->Fork(producerprime, 2);
+    c1->Fork(consumerprime, 1);
+    c2->Fork(consumerprime, 2);
+}
+
+//----------------------------------------------------------------------
+// ThreadTest6
+// Barrier
+//----------------------------------------------------------------------
+
+void
+SimpleThread2(int id)
+{
+    for(int i = 0; i < 5; ++i){
+        printf("*** thread %d looped %d times\n", id, i);
+        if(i == 1)
+            barrier->Stall();
+    }
+}
+
+void
+ThreadTest6()
+{
+    DEBUG('t', "Entering ThreadTest6");
+    barrier = new Barrier("barrier", 3);
+    Thread *t1 = Thread::GenThread("thread");
+    Thread *t2 = Thread::GenThread("thread");
+    Thread *t3 = Thread::GenThread("thread");
+    t1->Fork(SimpleThread2, 1);
+    t2->Fork(SimpleThread2, 2);
+    t3->Fork(SimpleThread2, 3);
+}
+//----------------------------------------------------------------------
 // ThreadTest
 //  Invoke a test routine.
 //----------------------------------------------------------------------
@@ -186,8 +324,18 @@ ThreadTest()
     case 3:
         ThreadTest3();
         break;
+    case 4:
+        ThreadTest4();
+        break;
+    case 5:
+        ThreadTest5();
+        break;
+    case 6:
+        ThreadTest6();                                                                                                                              
+        break;
     default:
-        printf("No test specified.\n");
+        printf("No test specified.\n");                                                                                                                                                                                                             
     break;
     }
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
