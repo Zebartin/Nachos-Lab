@@ -138,10 +138,18 @@ class Thread {
 // A thread running a user program actually has *two* sets of CPU registers --
 // one for its state while executing user code, one for its state
 // while executing kernel code.
-
+    char *fileName;
     int userRegisters[NumTotalRegs];    // user-level CPU register state
 
   public:
+    struct{
+        int codeFAddr, initDataFAddr, uninitDataFAddr;
+        int codeBegin, codeSize;
+        int initDataBegin, initDataSize;
+        int uninitDataBegin, uninitDataSize;
+    } fileInfo;
+    char *getFileName() { return fileName; }
+    void setFileName(char *name) { fileName = name; }
     void SaveUserState();       // save user-level register state
     void RestoreUserState();        // restore user-level register state
 

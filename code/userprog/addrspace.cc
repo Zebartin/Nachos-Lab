@@ -77,30 +77,36 @@ AddrSpace::AddrSpace(OpenFile *executable)
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
-
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
+    printf("User program requires %d bytes\n", size);
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
-	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+	//pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	//pageTable[i].physicalPage = i;
-	pageTable[i].physicalPage = machine->bitmap->Find();
-    ASSERT(pageTable[i].physicalPage != -1);
-    printf("phys page %d allocated.\n", pageTable[i].physicalPage);
-    pageTable[i].valid = TRUE;
+	//pageTable[i].physicalPage = machine->bitmap->Find();
+    //ASSERT(pageTable[i].physicalPage != -1);
+    //printf("phys page %d allocated.\n", pageTable[i].physicalPage);
+    pageTable[i].valid = FALSE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
 	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
     }
-    
+    currentThread->fileInfo.codeFAddr = noffH.code.inFileAddr;
+    currentThread->fileInfo.initDataFAddr = noffH.initData.inFileAddr;
+    currentThread->fileInfo.uninitDataFAddr = noffH.uninitData.inFileAddr;
+    currentThread->fileInfo.codeBegin = noffH.code.virtualAddr / PageSize;
+    currentThread->fileInfo.codeSize = noffH.code.size;
+    currentThread->fileInfo.initDataBegin = noffH.initData.virtualAddr / PageSize;
+    currentThread->fileInfo.initDataSize = noffH.initData.size;
+    currentThread->fileInfo.uninitDataBegin = noffH.uninitData.virtualAddr / PageSize;
+    currentThread->fileInfo.uninitDataSize = noffH.uninitData.size;
+
+    /*
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
             noffH.code.virtualAddr, noffH.code.size);
@@ -131,6 +137,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
             addr += PageSize;
         }
     }
+    */
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
 //    bzero(machine->mainMemory, size);

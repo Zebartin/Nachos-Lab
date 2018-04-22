@@ -1,7 +1,7 @@
 // exception.cc 
 //	Entry point into the Nachos kernel from user programs.
 //	There are two kinds of things that can cause control to
-//	transfer back to here from user code:
+//	transfer back to here from user initData:
 //
 //	syscall -- The user code explicitly requests to call a procedure
 //	in the Nachos kernel.  Right now, the only function we support is
@@ -25,6 +25,7 @@
 #include "machine.h"
 #include "system.h"
 #include "syscall.h"
+#include "noff.h"
 
 //#define TLB_FIFO
 #define TLB_LRU
@@ -102,21 +103,71 @@ ExceptionHandler(ExceptionType which)
 	}
     else if (which == PageFaultException) {
     	if (machine->tlb == NULL) {
-    		ASSERT(FALSE);
+    		OpenFile *openfile = fileSystem->Open(currentThread->getFileName());
+    		ASSERT(openfile != NULL);
+		    unsigned int vpn = (unsigned) machine->registers[BadVAddrReg] / PageSize;
+		    int fileAddr, pos = machine->bitmap->Find();
+    		printf("Page fault at vpn %d.\n", vpn);
+		    // Find an entry to replace
+		    if(pos == -1){
+		    	pos = 0;
+		    	for(int i = 0; i < machine->pageTableSize; ++i)
+		    		if(machine->pageTable[i].physicalPage == pos)
+		    			if(machine->pageTable[i].dirty){
+		    				openfile->WriteAt(&(machine->mainMemory[pos * PageSize]), PageSize, machine->pageTable[i].virtualPage * PageSize);
+		    				break;
+		    			}
+		    }
+		    if(currentThread->fileInfo.codeSize > 0 && 
+		    	vpn >= currentThread->fileInfo.codeBegin &&
+		    	vpn <= currentThread->fileInfo.codeBegin + currentThread->fileInfo.codeSize/PageSize)
+		    	fileAddr = currentThread->fileInfo.codeFAddr;
+		    else if(currentThread->fileInfo.initDataSize > 0 && 
+		    	vpn >= currentThread->fileInfo.initDataBegin &&
+		    	vpn <= currentThread->fileInfo.initDataBegin + currentThread->fileInfo.initDataSize/PageSize)
+		    	fileAddr = currentThread->fileInfo.initDataFAddr;
+		    else if(currentThread->fileInfo.uninitDataSize > 0 && 
+		    	vpn >= currentThread->fileInfo.uninitDataBegin &&
+		    	vpn <= currentThread->fileInfo.uninitDataBegin + currentThread->fileInfo.uninitDataSize/PageSize)
+		    	fileAddr = currentThread->fileInfo.uninitDataFAddr;
+		    else
+		    	fileAddr = 0;
+		    openfile->ReadAt(&(machine->mainMemory[pos * PageSize]), PageSize, vpn * PageSize + fileAddr);
+
+		    machine->pageTable[vpn].virtualPage = vpn;
+		    machine->pageTable[vpn].physicalPage = pos;
+		    machine->pageTable[vpn].valid = TRUE;
+		    machine->pageTable[vpn].readOnly = FALSE;
+		    machine->pageTable[vpn].use = FALSE;
+		    machine->pageTable[vpn].dirty = FALSE;
+		    delete openfile;
     	}
     	else {
-    		int badVAddr = machine->registers[BadVAddrReg];
-		    unsigned int vpn = (unsigned) badVAddr / PageSize;
-		    if (vpn >= machine->pageTableSize) {
-	    		DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-					badVAddr, machine->pageTableSize);
-	    		ASSERT(FALSE);
-	    	}
-	    	else if (!machine->pageTable[vpn].valid) {
-	    		DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-					badVAddr, machine->pageTableSize);
-	    		ASSERT(FALSE);
-	    	}
+		    unsigned int vpn = (unsigned) machine->registers[BadVAddrReg] / PageSize;
+		    if(!machine->pageTable[vpn].valid){
+	    		OpenFile *openfile = fileSystem->Open(currentThread->getFileName());
+	    		ASSERT(openfile != NULL);
+			    int phys = machine->bitmap->Find();
+	    		printf("Page fault at vpn %d.\n", vpn);
+			    // Find an entry to replace
+			    if(phys == -1){
+			    	phys = 0;
+			    	for(int i = 0; i < machine->pageTableSize; ++i)
+			    		if(machine->pageTable[i].physicalPage == 0)
+			    			if(machine->pageTable[i].dirty){
+			    				openfile->WriteAt(&(machine->mainMemory[phys * PageSize]), PageSize, machine->pageTable[i].virtualPage * PageSize);
+			    				break;
+			    			}
+			    }
+			    openfile->ReadAt(&(machine->mainMemory[phys * PageSize]), PageSize, vpn * PageSize);
+			    machine->pageTable[vpn].virtualPage = vpn;
+			    machine->pageTable[vpn].physicalPage = phys;
+			    machine->pageTable[vpn].valid = TRUE;
+			    machine->pageTable[vpn].readOnly = FALSE;
+			    machine->pageTable[vpn].use = FALSE;
+			    machine->pageTable[vpn].dirty = FALSE;
+			    delete openfile;
+		    }
 	    	int pos = TLBVictim();
 	    	machine->tlb[pos] = machine->pageTable[vpn];
 		}
