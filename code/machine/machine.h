@@ -25,6 +25,7 @@
 #include "utility.h"
 #include "translate.h"
 #include "disk.h"
+#include "bitmap.h"
 
 // Definitions related to the size, and format of user memory
 
@@ -155,6 +156,7 @@ class Machine {
 
     char *mainMemory;		// physical memory to store user program,
 				// code and data, while executing
+    BitMap *bitmap;
     int registers[NumTotalRegs]; // CPU registers, for executing user programs
 
 
@@ -178,10 +180,12 @@ class Machine {
 
     TranslationEntry *tlb;		// this pointer should be considered 
 					// "read-only" to Nachos kernel code
-
+    struct {
+        int time;
+        int miss;
+    } tlbinfo;
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
-
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction

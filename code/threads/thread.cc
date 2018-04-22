@@ -355,6 +355,6 @@ void
 Thread::RestoreUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
-    machine->WriteRegister(i, userRegisters[i]);
+        machine->WriteRegister(i, userRegisters[i]);
 }
 #endif

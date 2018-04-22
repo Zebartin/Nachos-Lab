@@ -22,8 +22,34 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
+#include "machine.h"
 #include "system.h"
 #include "syscall.h"
+
+//#define TLB_FIFO
+#define TLB_LRU
+
+int TLBVictim(){
+	for(int i = 0; i < TLBSize; ++i)
+		if(!machine->tlb[i].valid)
+			return i;
+
+#ifdef TLB_FIFO
+	for(int i = TLBSize - 1; i > 0; --i)
+    	machine->tlb[i] = machine->tlb[i - 1];  
+	return 0;
+#endif
+
+#ifdef TLB_LRU
+	int pos = 0, max = 0;
+	for(int i = 0; i < TLBSize; ++i)
+		if(machine->tlb[i].lrutime > max){
+			max = machine->tlb[i].lrutime;
+			pos = i;
+		}
+	return pos;
+#endif
+}
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -54,10 +80,49 @@ ExceptionHandler(ExceptionType which)
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(FALSE);
+		DEBUG('a', "Shutdown, initiated by user program.\n");
+   		interrupt->Halt();
+    }
+    else if((which == SyscallException) && (type == SC_Exit)) {
+		DEBUG('a', "Exit.\n");
+    	for (int i = 0; i < machine->pageTableSize; i++) {
+    	 	if(machine->pageTable[i].valid){
+    	 		machine->pageTable[i].valid = FALSE;
+    	 		machine->bitmap->Clear(machine->pageTable[i].physicalPage);
+    	 		printf("phys page %d deallocated.\n", machine->pageTable[i].physicalPage);
+    	 	}
+    	}
+	    // Advance program counters.
+	    machine->registers[PrevPCReg] = machine->registers[PCReg];	// for debugging, in case we
+															// are jumping into lala-land
+	    machine->registers[PCReg] = machine->registers[NextPCReg];
+	    machine->registers[NextPCReg] = machine->registers[NextPCReg] + 4;
+	    printf("Program(%s thread) exit.\n", currentThread->getName());
+	    currentThread->Finish();
+	}
+    else if (which == PageFaultException) {
+    	if (machine->tlb == NULL) {
+    		ASSERT(FALSE);
+    	}
+    	else {
+    		int badVAddr = machine->registers[BadVAddrReg];
+		    unsigned int vpn = (unsigned) badVAddr / PageSize;
+		    if (vpn >= machine->pageTableSize) {
+	    		DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+					badVAddr, machine->pageTableSize);
+	    		ASSERT(FALSE);
+	    	}
+	    	else if (!machine->pageTable[vpn].valid) {
+	    		DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
+					badVAddr, machine->pageTableSize);
+	    		ASSERT(FALSE);
+	    	}
+	    	int pos = TLBVictim();
+	    	machine->tlb[pos] = machine->pageTable[vpn];
+		}
+	}
+	else {
+		printf("Unexpected user mode exception %d %d\n", which, type);
+		ASSERT(FALSE);
     }
 }

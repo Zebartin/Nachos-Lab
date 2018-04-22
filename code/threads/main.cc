@@ -120,7 +120,12 @@ main(int argc, char **argv)
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	    ASSERT(argc > 1);
-            StartProcess(*(argv + 1));
+            Thread *t1 = Thread::GenThread("First");
+            Thread *t2 = Thread::GenThread("Second");
+            //printf("hello\n");
+            t1->Fork(StartProcess, *(argv + 1));
+            t2->Fork(StartProcess, *(argv + 1));
+            //StartProcess(*(argv + 1));
             argCount = 2;
         } else if (!strcmp(*argv, "-c")) {      // test the console
 	    if (argc == 1)
@@ -130,6 +135,7 @@ main(int argc, char **argv)
 	        ConsoleTest(*(argv + 1), *(argv + 2));
 	        argCount = 3;
 	    }
+	    currentThread->Sleep();
 	    interrupt->Halt();		// once we start the console, then 
 					// Nachos will loop forever waiting 
 					// for console input

@@ -32,6 +32,7 @@ Machine::Run()
 {
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
+    printf("Program(%s thread) begins to run...\n", currentThread->getName());
     if(DebugIsEnabled('m'))
         printf("Starting thread \"%s\" at time %d\n",
 	       currentThread->getName(), stats->totalTicks);
