@@ -9,7 +9,7 @@
 
 #include "syscall.h"
 
-#define N 10
+#define N 512
 int A[N];	/* size of physical memory; with code, we'll run out of space!*/
 
 int

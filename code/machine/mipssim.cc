@@ -552,7 +552,6 @@ Machine::OneInstruction(Instruction *instr)
       default:
 	ASSERT(FALSE);
     }
-    
     // Now we have successfully executed the instruction.
     
     // Do any delayed load operation

@@ -209,6 +209,8 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     offset = (unsigned) virtAddr % PageSize;
     
     if (tlb == NULL) {		// => page table => vpn is index into table
+        for(i = 0; i < pageTableSize; ++i)
+            pageTable[i].lrutime++;
 	if (vpn >= pageTableSize) {
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
@@ -219,6 +221,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	    return PageFaultException;
 	}
 	entry = &pageTable[vpn];
+    entry->lrutime = 0;
     } else {
     	tlbinfo.time++;
     	for(i = 0; i < TLBSize; ++i)
@@ -226,7 +229,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
         for (entry = NULL, i = 0; i < TLBSize; i++)
     	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
 		entry = &tlb[i];			// FOUND!
-		tlb[i].lrutime = 0;
+		entry->lrutime = 0;
 		break;
 	    }
 	if (entry == NULL) {				// not found

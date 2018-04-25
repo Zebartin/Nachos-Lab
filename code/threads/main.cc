@@ -119,12 +119,14 @@ main(int argc, char **argv)
             printf (copyright);
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
-	    ASSERT(argc > 1);
+            ASSERT(argc > 1);
             Thread *t1 = Thread::GenThread("First");
-            //Thread *t2 = Thread::GenThread("Second");
-            //printf("hello\n");
+            Thread *t2 = Thread::GenThread("Second");
+            Thread *t3 = Thread::GenThread("Third");
+            printf("hello\n");
             t1->Fork(StartProcess, *(argv + 1));
-            //t2->Fork(StartProcess, *(argv + 1));
+            t2->Fork(StartProcess, *(argv + 1));
+            t3->Fork(StartProcess, *(argv + 1));
             //StartProcess(*(argv + 1));
             argCount = 2;
         } else if (!strcmp(*argv, "-c")) {      // test the console

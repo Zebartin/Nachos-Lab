@@ -61,21 +61,17 @@ Machine::Machine(bool debug)
     mainMemory = new char[MemorySize];
     for (i = 0; i < MemorySize; i++)
       	mainMemory[i] = 0;
-    bitmap = new BitMap(MemorySize);
+    bitmap = new BitMap(NumPhysPages);
 #ifdef USE_TLB
-    /*
     tlb = new TranslationEntry[TLBSize];
     for (i = 0; i < TLBSize; i++){
 	   tlb[i].valid = FALSE;
        tlb[i].lrutime = 0;
     }
-    printf("why here?\n");
     tlbinfo.time = tlbinfo.miss = 0;
     pageTable = NULL;
-    */
 #else	// use linear page table
     tlb = NULL;
-    printf("should here\n");
     pageTable = NULL;
 #endif
 

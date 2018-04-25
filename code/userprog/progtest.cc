@@ -30,15 +30,14 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
+    currentThread->setFileName(filename);
     space = new AddrSpace(executable);    
     currentThread->space = space;
-    currentThread->setFileName(filename);
-
     delete executable;			// close file
-    
+
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
-    
+
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;

@@ -89,6 +89,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	//pageTable[i].physicalPage = machine->bitmap->Find();
     //ASSERT(pageTable[i].physicalPage != -1);
     //printf("phys page %d allocated.\n", pageTable[i].physicalPage);
+    pageTable[i].lrutime = 0;
     pageTable[i].valid = FALSE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
@@ -96,6 +97,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 					// a separate page, we could set its 
 					// pages to be read-only
     }
+    currentThread->fileInfo.size = size;
     currentThread->fileInfo.codeFAddr = noffH.code.inFileAddr;
     currentThread->fileInfo.initDataFAddr = noffH.initData.inFileAddr;
     currentThread->fileInfo.uninitDataFAddr = noffH.uninitData.inFileAddr;
@@ -106,6 +108,41 @@ AddrSpace::AddrSpace(OpenFile *executable)
     currentThread->fileInfo.uninitDataBegin = noffH.uninitData.virtualAddr / PageSize;
     currentThread->fileInfo.uninitDataSize = noffH.uninitData.size;
 
+    printf("name: %s\n", currentThread->getFileName());
+    fileSystem->Create(currentThread->getFileName(), size);
+    OpenFile *openfile = fileSystem->Open(currentThread->getFileName());
+
+    char temp[PageSize];
+    if (noffH.code.size > 0) {
+        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
+            noffH.code.virtualAddr, noffH.code.size);
+        int addr = noffH.code.inFileAddr;
+        unsigned int vpn = (unsigned) noffH.code.virtualAddr / PageSize,
+                    offset = (unsigned) noffH.code.virtualAddr % PageSize,
+                    psize;
+        for(i = 0; i < noffH.code.size; i += PageSize){
+            psize = i + PageSize > noffH.code.size ? noffH.code.size - i:PageSize;
+            executable->ReadAt(temp, psize, addr);
+            openfile->WriteAt(temp, psize, vpn * PageSize);
+            vpn++;
+            addr += PageSize;
+        }
+    }
+    if (noffH.initData.size > 0) {
+        DEBUG('a', "Initializing initData segment, at 0x%x, size %d\n", 
+            noffH.initData.virtualAddr, noffH.initData.size);
+        int addr = noffH.initData.inFileAddr;
+        unsigned int vpn = (unsigned) noffH.initData.virtualAddr / PageSize,
+                    offset = (unsigned) noffH.initData.virtualAddr % PageSize,
+                    psize;
+        for(i = 0; i < noffH.initData.size; i += PageSize){
+            psize = i + PageSize > noffH.initData.size ? noffH.initData.size - i:PageSize;
+            executable->ReadAt(temp, psize, addr);
+            openfile->WriteAt(temp, psize, vpn * PageSize);
+            vpn++;
+            addr += PageSize;
+        }
+    }
     /*
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
