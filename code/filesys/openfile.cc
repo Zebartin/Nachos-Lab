@@ -28,7 +28,8 @@
 //----------------------------------------------------------------------
 
 OpenFile::OpenFile(int sector)
-{ 
+{
+    sectorN = sector;
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
@@ -139,6 +140,9 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 
     // copy the part we want
     bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
+
+    hdr->setOpenTime();
+    hdr->WriteBack(sectorN);
     delete [] buf;
     return numBytes;
 }
@@ -181,6 +185,10 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     for (i = firstSector; i <= lastSector; i++)	
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
+
+    hdr->setOpenTime();
+    hdr->setModifyTime();
+    hdr->WriteBack(sectorN);
     delete [] buf;
     return numBytes;
 }
