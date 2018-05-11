@@ -19,8 +19,13 @@
 #include "time.h"
 
 #define DATETIMELEN 24
+
 #define NumDirect 	((SectorSize - 2 * sizeof(int) - 3 * (DATETIMELEN + 1)) / sizeof(int))
-#define MaxFileSize 	(NumDirect * SectorSize)
+#define FirstDirect     8
+#define SecondDirect    (NumDirect - FirstDirect)
+#define SecondSize      (SectorSize / sizeof(int))
+#define TotalDirect     (FirstDirect + SecondSize * SecondDirect) 
+#define MaxFileSize 	(TotalDirect * SectorSize)
 
 // The following class defines the Nachos "file header" (in UNIX terms,
 // the "i-node"), describing where on disk to find all of the data in the file.

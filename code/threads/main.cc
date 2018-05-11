@@ -58,6 +58,10 @@ extern int testnum;
 extern bool tsflag;
 #endif
 
+#ifdef FILESYS_NEEDED
+extern FileSystem  *fileSystem;
+#endif
+
 // External functions used by this file
 
 extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
@@ -108,7 +112,7 @@ main(int argc, char **argv)
       }
     }
 
-    ThreadTest();
+    //ThreadTest();
     if(tsflag)
 	    ThreadStatus();
 #endif
@@ -123,7 +127,6 @@ main(int argc, char **argv)
             Thread *t1 = Thread::GenThread("First");
             Thread *t2 = Thread::GenThread("Second");
             Thread *t3 = Thread::GenThread("Third");
-            printf("hello\n");
             t1->Fork(StartProcess, *(argv + 1));
             t2->Fork(StartProcess, *(argv + 1));
             t3->Fork(StartProcess, *(argv + 1));
