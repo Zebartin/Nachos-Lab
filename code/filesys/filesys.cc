@@ -177,42 +177,68 @@ FileSystem::Create(char *name, int initialSize)
     Directory *directory;
     BitMap *freeMap;
     FileHeader *hdr;
-    int sector;
+    OpenFile *correctFile = directoryFile;
+    int sector, dirSector;
     bool success;
+    char type;
 
     DEBUG('f', "Creating file %s, size %d\n", name, initialSize);
 
     directory = new Directory(NumDirEntries);
-    directory->FetchFrom(directoryFile);
+    directory->FetchFrom(correctFile);
 
-
-    if (directory->Find(name) != -1)
-      success = FALSE;			// file is already in directory
+    printf("name: %s\n", name);
+    dirSector = directory->FindDir(name);
+    printf("dirSector: %d\n", dirSector);
+    if (dirSector == -1){
+        printf("Unable to find the directory path\n");
+        success = FALSE;
+    }
     else {
-        freeMap = new BitMap(NumSectors);
-        freeMap->FetchFrom(freeMapFile);
-        sector = freeMap->Find();	// find a sector to hold the file header
-    	if (sector == -1)
-            success = FALSE;		// no free block for file header
-        else if (!directory->Add(name, sector))
-            success = FALSE;	// no space in directory
-	else {
-    	    hdr = new FileHeader;
-	    if (!hdr->Allocate(freeMap, initialSize))
-            	success = FALSE;	// no space on disk for data
-	    else {
-	    	success = TRUE;
-		// everthing worked, flush all changes back to disk
-                hdr->setCreateTime();
-                hdr->setOpenTime();
-                hdr->setModifyTime();
-    	    	hdr->WriteBack(sector);
-    	    	directory->WriteBack(directoryFile);
-    	    	freeMap->WriteBack(freeMapFile);
-	    }
-            delete hdr;
-	}
-        delete freeMap;
+        // update directory
+        if (dirSector != DirectorySector){
+            correctFile = new OpenFile(dirSector);
+            directory->FetchFrom(correctFile);
+        }
+    
+        if (directory->Find(name) != -1)
+            success = FALSE;			// file is already in directory
+        else {
+            freeMap = new BitMap(NumSectors);
+            freeMap->FetchFrom(freeMapFile);
+            sector = freeMap->Find();	// find a sector to hold the file header
+            if (initialSize == -1){
+                type = TYPE_DIR;
+                initialSize = DirectoryFileSize;
+            }
+            else
+                type = TYPE_FILE;
+        	if (sector == -1)
+                success = FALSE;		// no free block for file header
+            else if (!directory->Add(name, sector, type))
+                success = FALSE;	// no space in directory
+            else {
+        	    hdr = new FileHeader;
+        	    if (!hdr->Allocate(freeMap, initialSize))
+                    	success = FALSE;	// no space on disk for data
+        	    else {
+                    success = TRUE;
+                    // everthing worked, flush all changes back to disk
+                    if (type == TYPE_DIR){
+                        Directory *dir = new Directory(NumDirEntries);
+                        dir->WriteBack(new OpenFile(sector));
+                    }
+                    hdr->setCreateTime();
+                    hdr->setOpenTime();
+                    hdr->setModifyTime();
+        	    	hdr->WriteBack(sector);
+        	    	directory->WriteBack(correctFile);
+        	    	freeMap->WriteBack(freeMapFile);
+        	    }
+                delete hdr;
+            }
+            delete freeMap;
+        }
     }
     delete directory;
     return success;
@@ -233,13 +259,22 @@ FileSystem::Open(char *name)
 {
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
-    int sector;
+    int sector, dirSector;
 
     DEBUG('f', "Opening file %s\n", name);
+
     directory->FetchFrom(directoryFile);
+    dirSector = directory->FindDir(name);
+    if (dirSector == -1){
+        printf("Unable to find the directory path\n");
+        return openFile;
+    }
+    printf("dirSector: %d\n", dirSector);
+    if (dirSector != DirectorySector)
+        directory->FetchFrom(new OpenFile(dirSector));
     sector = directory->Find(name);
     if (sector >= 0)
-	openFile = new OpenFile(sector);	// name was found in directory
+	   openFile = new OpenFile(sector);	// name was found in directory
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -264,14 +299,32 @@ FileSystem::Remove(char *name)
     Directory *directory;
     BitMap *freeMap;
     FileHeader *fileHdr;
-    int sector;
+    OpenFile *correctFile = directoryFile;
+    int sector, dirSector;
 
     directory = new Directory(NumDirEntries);
-    directory->FetchFrom(directoryFile);
+    directory->FetchFrom(correctFile);
+    dirSector = directory->FindDir(name);
+    if (dirSector == -1){
+        printf("Unable to find the directory path\n");
+        return FALSE;
+    }
+    if (dirSector != DirectorySector){
+        correctFile = new OpenFile(dirSector);
+        directory->FetchFrom(correctFile);
+    }
     sector = directory->Find(name);
     if (sector == -1) {
        delete directory;
        return FALSE;			 // file not found
+    }
+    if (directory->FindType(name) == TYPE_DIR){
+        char **files;
+        int fileN;
+        printf("Removing the whole directory %s...\n", name);
+        directory->GetNames(files, fileN);
+        for (int i = 0; i < fileN; i++)
+            Remove(files[i]);
     }
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
@@ -279,12 +332,12 @@ FileSystem::Remove(char *name)
     freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(freeMapFile);
 
-    fileHdr->Deallocate(freeMap);  		// remove data blocks
-    freeMap->Clear(sector);			// remove header block
+    fileHdr->Deallocate(freeMap);       // remove data blocks
+    freeMap->Clear(sector);         // remove header block
     directory->Remove(name);
 
-    freeMap->WriteBack(freeMapFile);		// flush to disk
-    directory->WriteBack(directoryFile);        // flush to disk
+    freeMap->WriteBack(freeMapFile);        // flush to disk  
+    directory->WriteBack(correctFile);        // flush to disk
     delete fileHdr;
     delete directory;
     delete freeMap;

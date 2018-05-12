@@ -38,7 +38,7 @@ class DirectoryEntry {
 					//   FileHeader for this file
     char name[FileNameMaxLen + 1];	// Text name for file, with +1 for
 					// the trailing '\0'
-    char path[20];
+    char path[FileNameMaxLen << 2];
     char type;
 };
 
@@ -64,8 +64,10 @@ class Directory {
 
     int Find(char *name);		// Find the sector number of the
 					// FileHeader for file: "name"
+    int FindDir(char *name);
+    char FindType(char *name);
 
-    bool Add(char *name, int newSector);  // Add a file name into the directory
+    bool Add(char *name, int newSector, char fileType);  // Add a file name into the directory
 
     bool Remove(char *name);		// Remove a file from the directory
 
@@ -74,6 +76,7 @@ class Directory {
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.
+    void GetNames(char **fileNames, int &fileNum);
 
   private:
     int tableSize;			// Number of directory entries

@@ -151,7 +151,12 @@ main(int argc, char **argv)
 	    ASSERT(argc > 2);
 	    Copy(*(argv + 1), *(argv + 2));
 	    argCount = 3;
-	} else if (!strcmp(*argv, "-p")) {	// print a Nachos file
+	} else if (!strcmp(*argv, "-md")) {
+        ASSERT(argc > 1);
+        if (!fileSystem->Create(*(argv + 1), -1))
+            printf("Creating directory \'%s\' fails\n", *(argv + 1));
+        argCount = 2;
+    } else if (!strcmp(*argv, "-p")) {	// print a Nachos file
 	    ASSERT(argc > 1);
 	    Print(*(argv + 1));
 	    argCount = 2;
