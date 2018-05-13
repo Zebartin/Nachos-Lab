@@ -101,6 +101,111 @@ FileHeader::Deallocate(BitMap *freeMap)
 }
 
 //----------------------------------------------------------------------
+// FileHeader::Reallocate
+//  Change the file size and reallocate for that
+//
+//  "freeMap" is the bit map of free disk sectors
+//----------------------------------------------------------------------
+
+bool
+FileHeader::Reallocate(BitMap *freeMap, int fileSize)
+{
+    int oldSize = numBytes, oldNumSectors = numSectors;
+
+    numBytes = fileSize;
+    numSectors  = divRoundUp(fileSize, SectorSize);
+
+    if (fileSize > oldSize) {
+        // no need to allocate more
+        if (numSectors == oldNumSectors)
+            return TRUE;
+        // need more in first direct
+        if (freeMap->NumClear() < numSectors - oldNumSectors){
+            numBytes = oldSize;
+            numSectors = oldNumSectors; 
+            return FALSE;        // not enough space  
+        }
+        // 直接索引即可
+        if (numSectors <= FirstDirect)
+            for (int i = oldNumSectors; i < numSectors; i++)
+                dataSectors[i] = freeMap->Find();
+        // 部分间接索引
+        else {
+            for (int i = oldNumSectors; i < FirstDirect; i++)
+                dataSectors[i] = freeMap->Find();
+            int sectorContent[SecondSize];
+            // 原来只用到直接索引
+            if (oldNumSectors <= FirstDirect)
+                for (int i = 0, left = numSectors - FirstDirect; left > 0; i++, left -= SecondSize){
+                    dataSectors[FirstDirect + i] = freeMap->Find();
+                    memset(sectorContent, 0, sizeof sectorContent);
+                    for (int j = 0; j < (left < SecondSize ? left:SecondSize); j++)
+                        sectorContent[j] = freeMap->Find();
+                    synchDisk->WriteSector(dataSectors[FirstDirect + i], (char *)sectorContent);
+                }                
+            else {
+                int secSector = oldNumSectors - FirstDirect - 1;
+                //printf("dataSectors[%d]: %d\n", FirstDirect + secSector / SecondSize, dataSectors[FirstDirect + secSector / SecondSize]);
+                // 原先的二级索引部分可用
+                if ((secSector + 1) % SecondSize != 0){
+                    synchDisk->ReadSector(dataSectors[FirstDirect + secSector / SecondSize], (char *)sectorContent);
+                    for (int j = (secSector + 1) % SecondSize, left = numSectors - oldNumSectors; j < SecondSize && left > 0; j++, left--)
+                        sectorContent[j] = freeMap->Find();
+                    synchDisk->WriteSector(dataSectors[FirstDirect + secSector / SecondSize], (char *)sectorContent);
+                }
+                // 需要新的二级索引
+                for (int i = 0, left = numSectors - FirstDirect - (secSector / SecondSize + 1) * SecondSize; left > 0; i++, left -= SecondSize){
+                    dataSectors[FirstDirect + (secSector / SecondSize + 1) + i] = freeMap->Find();
+                    memset(sectorContent, 0, sizeof sectorContent);
+                    for (int j = 0; j < (left < SecondSize ? left:SecondSize); j++)
+                        sectorContent[j] = freeMap->Find();
+                    synchDisk->WriteSector(dataSectors[FirstDirect + (secSector / SecondSize + 1) + i], (char *)sectorContent);
+                }
+            }
+        }
+    }
+    else {
+        if (numSectors == oldNumSectors)
+            return TRUE;
+        if (oldNumSectors <= FirstDirect)
+            for (int i = numSectors; i < oldNumSectors; i++) {
+                ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+                freeMap->Clear((int) dataSectors[i]);
+            }
+        else {
+            for (int i = numSectors; i < FirstDirect; i++) {
+                ASSERT(freeMap->Test((int) dataSectors[i]));
+                freeMap->Clear((int) dataSectors[i]);
+            }
+            int sectorContent[SecondSize];
+            // 减小大小后只用到直接索引
+            if (numSectors <= FirstDirect)
+                for (int i = 0, left = oldNumSectors - FirstDirect; left > 0; i++, left -= SecondSize) {
+                    ASSERT(freeMap->Test((int) dataSectors[FirstDirect + i]));
+                    synchDisk->ReadSector(dataSectors[FirstDirect + i], (char *)sectorContent);
+                    for (int j = 0; j < (left < SecondSize ? left:SecondSize); j++){
+                        ASSERT(freeMap->Test((int) sectorContent[j]));
+                        freeMap->Clear((int) sectorContent[j]);                
+                    }
+                    freeMap->Clear((int) dataSectors[FirstDirect + i]);
+                }
+            // 减小大小后仍要用到二级索引
+            else
+                for (int i = 0, left = oldNumSectors - numSectors; left > 0; i++, left -= SecondSize) {
+                    ASSERT(freeMap->Test((int) dataSectors[numSectors + i]));
+                    synchDisk->ReadSector(dataSectors[numSectors + i], (char *)sectorContent);
+                    for (int j = 0; j < (left < SecondSize ? left:SecondSize); j++){
+                        ASSERT(freeMap->Test((int) sectorContent[j]));
+                        freeMap->Clear((int) sectorContent[j]);                
+                    }
+                    freeMap->Clear((int) dataSectors[numSectors + i]);
+                }
+        }        
+    }
+    return TRUE;
+}
+
+//----------------------------------------------------------------------
 // FileHeader::FetchFrom
 // 	Fetch contents of file header from disk.
 //
@@ -196,6 +301,7 @@ FileHeader::Print()
 void
 FileHeader::setCreateTime(){
     setTime(createTime);
+    printf("created: %s\n", createTime);
 }
 
 void

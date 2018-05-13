@@ -65,7 +65,7 @@ extern FileSystem  *fileSystem;
 // External functions used by this file
 
 extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
-extern void Print(char *file), PerformanceTest(void);
+extern void Print(char *file), PerformanceTest(int);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
 extern void ThreadStatus();
@@ -169,7 +169,14 @@ main(int argc, char **argv)
 	} else if (!strcmp(*argv, "-D")) {	// print entire filesystem
             fileSystem->Print();
 	} else if (!strcmp(*argv, "-t")) {	// performance test
-            PerformanceTest();
+            int testnum;
+            if (argc == 1)
+                testnum = 0;
+            else{
+                testnum = atoi(argv[1]);
+                argCount = 2;
+            }
+            PerformanceTest(testnum);
 	}
 #endif // FILESYS
 #ifdef NETWORK

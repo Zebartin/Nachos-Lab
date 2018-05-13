@@ -202,7 +202,6 @@ Directory::Add(char *name, int newSector, char fileType)
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = TRUE;
-            printf("add to dir: %s\n", name);
             strncpy(table[i].path, name, FileNameMaxLen << 2);
             pos = -1;
             for (int j = strlen(name) - 1; j >= 0; j--)
@@ -211,7 +210,6 @@ Directory::Add(char *name, int newSector, char fileType)
                     break;
                 }
             strncpy(table[i].name, name + pos + 1, FileNameMaxLen);
-            printf("filename: %s\n", table[i].name);
             table[i].sector = newSector;
             table[i].type = fileType;
             return TRUE;

@@ -187,9 +187,7 @@ FileSystem::Create(char *name, int initialSize)
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(correctFile);
 
-    printf("name: %s\n", name);
     dirSector = directory->FindDir(name);
-    printf("dirSector: %d\n", dirSector);
     if (dirSector == -1){
         printf("Unable to find the directory path\n");
         success = FALSE;
@@ -269,7 +267,6 @@ FileSystem::Open(char *name)
         printf("Unable to find the directory path\n");
         return openFile;
     }
-    printf("dirSector: %d\n", dirSector);
     if (dirSector != DirectorySector)
         directory->FetchFrom(new OpenFile(dirSector));
     sector = directory->Find(name);
@@ -344,6 +341,17 @@ FileSystem::Remove(char *name)
     return TRUE;
 }
 
+bool
+FileSystem::Resize(FileHeader *fileHdr, int fileSize)
+{
+    BitMap *freeMap = new BitMap(NumSectors);
+    freeMap->FetchFrom(freeMapFile);
+    if (!fileHdr->Reallocate(freeMap, fileSize))
+        return FALSE;
+    freeMap->WriteBack(freeMapFile);
+    delete freeMap;
+    return TRUE;
+}
 //----------------------------------------------------------------------
 // FileSystem::List
 // 	List all the files in the file system directory.

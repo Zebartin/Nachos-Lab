@@ -154,11 +154,18 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     int i, firstSector, lastSector, numSectors;
     bool firstAligned, lastAligned;
     char *buf;
-
-    if ((numBytes <= 0) || (position >= fileLength))
-	return 0;				// check request
-    if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
+    if ((numBytes <= 0) || (position > fileLength))
+        return 0;				// check request
+    if ((position + numBytes) > fileLength){
+        if (fileSystem->Resize(hdr, position + numBytes)){
+            //printf("Extend from %d to %d\n", fileLength, hdr->FileLength());
+            fileLength = hdr->FileLength();
+        }
+        else {
+            //printf("Extension fails\n");
+            numBytes = fileLength - position;
+        }
+    }
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
 
