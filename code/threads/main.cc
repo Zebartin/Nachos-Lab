@@ -65,7 +65,7 @@ extern FileSystem  *fileSystem;
 // External functions used by this file
 
 extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
-extern void Print(char *file), PerformanceTest(int);
+extern void Print(char *file), PerformanceTest(int), SynchConsoleTest(char *in, char *out);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
 extern void ThreadStatus();
@@ -95,12 +95,12 @@ main(int argc, char **argv)
     
 
 #ifdef THREADS
-    for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
       switch (argv[0][1]) {
       case 'q':
         testnum = atoi(argv[1]);
-        argCount++;
+        argv+= 2;
+        ThreadTest();
         break;
       case 's':
       	tsflag = true;
@@ -110,9 +110,7 @@ main(int argc, char **argv)
         tsflag = false;
         break;
       }
-    }
 
-    //ThreadTest();
     if(tsflag)
 	    ThreadStatus();
 #endif
@@ -140,7 +138,6 @@ main(int argc, char **argv)
 	        ConsoleTest(*(argv + 1), *(argv + 2));
 	        argCount = 3;
 	    }
-	    currentThread->Sleep();
 	    interrupt->Halt();		// once we start the console, then 
 					// Nachos will loop forever waiting 
 					// for console input
@@ -177,7 +174,16 @@ main(int argc, char **argv)
                 argCount = 2;
             }
             PerformanceTest(testnum);
-	}
+	} else if (!strcmp(*argv, "-sc")) {
+            if (argc == 1)
+                SynchConsoleTest(NULL, NULL);
+            else {
+                ASSERT(argc > 2);
+                ConsoleTest(*(argv + 1), *(argv + 2));
+                argCount = 3;
+            }
+            interrupt->Halt();
+    }
 #endif // FILESYS
 #ifdef NETWORK
         if (!strcmp(*argv, "-o")) {

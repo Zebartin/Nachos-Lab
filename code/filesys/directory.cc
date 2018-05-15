@@ -290,7 +290,7 @@ Directory::GetNames(char **fileNames, int &fileNum)
     fileNames = new char *[fileNum];
     for (int i = 0, j = 0; i < tableSize; i++)
         if(table[i].inUse){
-            fileNames[j] = new char[FileNameMaxLen + 1];
-            strncpy(fileNames[j++], table[i].name, FileNameMaxLen);
+            fileNames[j] = new char[FileNameMaxLen << 2];
+            strncpy(fileNames[j++], table[i].path, FileNameMaxLen << 2);
         }
 }

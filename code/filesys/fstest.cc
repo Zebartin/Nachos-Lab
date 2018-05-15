@@ -20,6 +20,7 @@
 #include "thread.h"
 #include "disk.h"
 #include "stats.h"
+#include "synchconsole.h"
 
 #define TransferSize 	10 	// make it small, just to be difficult
 
@@ -111,7 +112,7 @@ Print(char *name)
 #define FileName 	"TestFile"
 #define Contents 	"1234567890"
 #define ContentSize 	strlen(Contents)
-#define FileSize 	((int)(ContentSize * 700))
+#define FileSize 	((int)(ContentSize * 10))
 
 static void 
 FileWrite()
@@ -147,7 +148,7 @@ FileRead()
     OpenFile *openFile;    
     char *buffer = new char[ContentSize];
     int i, numBytes;
-
+    printf("thread: %s\n", currentThread->getName());
     printf("Sequential read of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
 
@@ -173,6 +174,7 @@ void
 PerformanceTest(int testnum)
 {
     printf("Starting file system performance test:\n");
+    char data[SectorSize];
     switch(testnum){
         case 0:
             stats->Print();
@@ -186,6 +188,17 @@ PerformanceTest(int testnum)
             stats->Print();
         break;
         case 1:
+            printf("Write data to pipe\n");
+            printf("Input: ");
+            scanf("%s", data);
+            fileSystem->WritePipe(data, strlen(data) + 1);
+        break;
+        case 2:
+            int len;
+            printf("Read data from pipe\n");
+            len = fileSystem->ReadPipe(data);
+            data[len] = 0;
+            printf("%s\n", data);
         break;
         default:
         break;      
@@ -193,3 +206,15 @@ PerformanceTest(int testnum)
 
 }
 
+void 
+SynchConsoleTest (char *in, char *out)
+{
+    char ch;
+
+    SynchConsole *synchconsole = new SynchConsole(in, out);
+    for(;;){
+        ch = synchconsole->GetChar();
+        synchconsole->PutChar(ch);
+        if(ch == 'q') return;
+    }
+}

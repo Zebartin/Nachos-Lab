@@ -59,7 +59,7 @@ class FileHeader {
     int ByteToSector(int offset);	// Convert a byte offset into the file
 					// to the disk sector containing
 					// the byte
-
+    void setCurLen(int len);
     int FileLength();			// Return the length of the file
 					// in bytes
 

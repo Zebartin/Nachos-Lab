@@ -56,6 +56,7 @@
 // sectors, so that they can be located on boot-up.
 #define FreeMapSector 		0
 #define DirectorySector 	1
+#define PipeSector          2
 
 // Initial file sizes for the bitmap and directory; until the file system
 // supports extensible files, the directory size sets the maximum number
@@ -63,7 +64,7 @@
 #define FreeMapFileSize 	(NumSectors / BitsInByte)
 #define NumDirEntries 		10//(MaxFileSize / sizeof(DirectoryEntry))
 #define DirectoryFileSize 	(sizeof(DirectoryEntry) * NumDirEntries)
-
+#define PipeFileSize        5000
 //----------------------------------------------------------------------
 // FileSystem::FileSystem
 // 	Initialize the file system.  If format = TRUE, the disk has
@@ -85,19 +86,21 @@ FileSystem::FileSystem(bool format)
         Directory *directory = new Directory(NumDirEntries);
 	FileHeader *mapHdr = new FileHeader;
 	FileHeader *dirHdr = new FileHeader;
-
+    FileHeader *pipeHdr = new FileHeader;
         DEBUG('f', "Formatting the file system.\n");
 
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
 	freeMap->Mark(FreeMapSector);
 	freeMap->Mark(DirectorySector);
+    freeMap->Mark(PipeSector);
 
     // Second, allocate space for the data blocks containing the contents
     // of the directory and bitmap files.  There better be enough space!
 
 	ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize));
-	ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
+    ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize));
+    ASSERT(pipeHdr->Allocate(freeMap, PipeFileSize));
 
     // Flush the bitmap and directory FileHeaders back to disk
     // We need to do this before we can "Open" the file, since open
@@ -107,6 +110,7 @@ FileSystem::FileSystem(bool format)
         DEBUG('f', "Writing headers back to disk.\n");
 	mapHdr->WriteBack(FreeMapSector);
 	dirHdr->WriteBack(DirectorySector);
+    pipeHdr->WriteBack(PipeSector);
 
     // OK to open the bitmap and directory files now
     // The file system operations assume these two files are left open
@@ -319,7 +323,9 @@ FileSystem::Remove(char *name)
         char **files;
         int fileN;
         printf("Removing the whole directory %s...\n", name);
-        directory->GetNames(files, fileN);
+        Directory *dir = new Directory(NumDirEntries);
+        dir->FetchFrom(new OpenFile(sector));
+        dir->GetNames(files, fileN);
         for (int i = 0; i < fileN; i++)
             Remove(files[i]);
     }
@@ -351,6 +357,36 @@ FileSystem::Resize(FileHeader *fileHdr, int fileSize)
     freeMap->WriteBack(freeMapFile);
     delete freeMap;
     return TRUE;
+}
+
+int
+FileSystem::ReadPipe(char *data)
+{
+    OpenFile *pipeFile = new OpenFile(PipeSector);
+    FileHeader *hdr = new FileHeader;
+    int len;
+    hdr->FetchFrom(PipeSector);
+    len = hdr->FileLength();
+    pipeFile->Read(data, len);
+    
+    delete pipeFile;
+    delete hdr;
+    return len;
+}
+
+int
+FileSystem::WritePipe(char *data, int len)
+{
+    OpenFile *pipeFile = new OpenFile(PipeSector);
+    FileHeader *hdr = new FileHeader;
+    pipeFile->Write(data, len);
+    //change file length
+    hdr->FetchFrom(PipeSector);
+    hdr->setCurLen(len);
+    hdr->WriteBack(PipeSector);
+    delete hdr;
+    delete pipeFile;
+    return len;
 }
 //----------------------------------------------------------------------
 // FileSystem::List

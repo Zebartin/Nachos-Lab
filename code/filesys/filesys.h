@@ -83,6 +83,8 @@ class FileSystem {
     
     bool Resize(FileHeader *fileHdr, int fileSize);
     
+    int ReadPipe(char *data);
+    int WritePipe(char *datam, int len);
     void List();			// List all the files in the file system
 
     void Print();			// List all the files and their contents
