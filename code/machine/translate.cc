@@ -98,6 +98,7 @@ Machine::ReadMem(int addr, int size, int *value)
 	machine->RaiseException(exception, addr);
 	return FALSE;
     }
+
     switch (size) {
       case 1:
 	data = machine->mainMemory[physicalAddress];

@@ -119,14 +119,15 @@ class Machine {
     void WriteRegister(int num, int value);
 				// store a value into a CPU register
 
-
+    void DeallocatePage();
 // Routines internal to the machine simulation -- DO NOT call these 
 
     void OneInstruction(Instruction *instr); 	
     				// Run one instruction of a user program.
     void DelayedLoad(int nextReg, int nextVal);  	
 				// Do a pending delayed load (modifying a reg)
-    
+    void AdvancePC(int pcAfter);
+
     bool ReadMem(int addr, int size, int* value);
     bool WriteMem(int addr, int size, int value);
     				// Read or write 1, 2, or 4 bytes of virtual 

@@ -46,6 +46,8 @@ extern FileSystem  *fileSystem;
 
 #ifdef FILESYS
 #include "synchdisk.h"
+#include "filehdr.h"
+#include "directory.h"
 extern SynchDisk   *synchDisk;
 #endif
 

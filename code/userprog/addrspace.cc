@@ -123,7 +123,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
         for(i = 0; i < noffH.code.size; i += PageSize){
             psize = i + PageSize > noffH.code.size ? noffH.code.size - i:PageSize;
             executable->ReadAt(temp, psize, addr);
-            openfile->WriteAt(temp, psize, vpn * PageSize);
+            openfile->WriteAt(temp, psize, vpn * PageSize + offset);
             vpn++;
             addr += PageSize;
         }
@@ -138,7 +138,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
         for(i = 0; i < noffH.initData.size; i += PageSize){
             psize = i + PageSize > noffH.initData.size ? noffH.initData.size - i:PageSize;
             executable->ReadAt(temp, psize, addr);
-            openfile->WriteAt(temp, psize, vpn * PageSize);
+            openfile->WriteAt(temp, psize, vpn * PageSize + offset);
             vpn++;
             addr += PageSize;
         }
@@ -194,6 +194,13 @@ AddrSpace::AddrSpace(OpenFile *executable)
 //  }
 }
 
+AddrSpace::AddrSpace(const AddrSpace &space)
+{
+    numPages = space.numPages;
+    pageTable = new TranslationEntry[numPages];
+    for (int i = 0; i < numPages; i++)
+        pageTable[i] = TranslationEntry(space.pageTable[i]);
+}
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
 // 	Dealloate an address space.  Nothing for now!

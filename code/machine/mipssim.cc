@@ -32,7 +32,7 @@ Machine::Run()
 {
     Instruction *instr = new Instruction;  // storage for decoded instruction
 
-    printf("Program(%s thread) begins to run...\n", currentThread->getName());
+    //printf("Program(%s thread) begins to run...\n", currentThread->getName());
     if(DebugIsEnabled('m'))
         printf("Starting thread \"%s\" at time %d\n",
 	       currentThread->getName(), stats->totalTicks);
@@ -557,13 +557,18 @@ Machine::OneInstruction(Instruction *instr)
     // Do any delayed load operation
     DelayedLoad(nextLoadReg, nextLoadValue);
     
+    AdvancePC(pcAfter);
+}
+
+void
+Machine::AdvancePC(int pcAfter)
+{
     // Advance program counters.
     registers[PrevPCReg] = registers[PCReg];	// for debugging, in case we
 						// are jumping into lala-land
     registers[PCReg] = registers[NextPCReg];
     registers[NextPCReg] = pcAfter;
 }
-
 //----------------------------------------------------------------------
 // Machine::DelayedLoad
 // 	Simulate effects of a delayed load.

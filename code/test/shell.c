@@ -30,6 +30,8 @@ main()
 		newProc = Exec(buffer);
 		Join(newProc);
 	}
+	else
+		break;
     }
 }
 

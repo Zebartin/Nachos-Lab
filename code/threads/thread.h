@@ -150,18 +150,13 @@ class Thread {
         int initDataBegin, initDataSize;
         int uninitDataBegin, uninitDataSize;
     } fileInfo;
-    char *getFileName() { return name; }
-    void setFileName(char *name) { 
-        // char *tmp = name;
-        // while(*name != 0){
-        //     if(*name != '.')
-        //         *tmp++ = *name;
-        //     ++name;
-        // }
-        // *tmp = 0;
-        // fileName = new char[strlen(tmp) + 10];
-        // strcpy(fileName, "thread_");
-        // strcat(fileName, tmp);
+    char *getFileName() { return fileName; }
+    void setFileName(char *name, bool add = TRUE) {
+        int addnum = add?8:1;
+        fileName = new char[strlen(name) + addnum];
+        strcpy(fileName, name);
+        if(add)
+            strcat(fileName, "_thread");
     }
     void SaveUserState();       // save user-level register state
     void RestoreUserState();        // restore user-level register state

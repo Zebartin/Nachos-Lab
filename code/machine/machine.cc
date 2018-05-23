@@ -114,6 +114,28 @@ Machine::RaiseException(ExceptionType which, int badVAddr)
     interrupt->setStatus(UserMode);
 }
 
+void
+Machine::DeallocatePage()
+{
+    OpenFile *openfile = fileSystem->Open(currentThread->getFileName());
+    for (int i = 0; i < pageTableSize; i++) {
+        if(pageTable[i].valid){
+            pageTable[i].valid = FALSE;
+            if(pageTable[i].dirty){
+                int tsize, fileAddr;
+                fileAddr = pageTable[i].virtualPage * PageSize;
+                tsize = fileAddr + PageSize < currentThread->fileInfo.size ?
+                    PageSize:currentThread->fileInfo.size - fileAddr;
+                openfile->WriteAt(
+                    &(mainMemory[pageTable[i].physicalPage * PageSize]),
+                    tsize, fileAddr);
+            }
+            bitmap->Clear(pageTable[i].physicalPage);
+            printf("phys page %d deallocated.\n", pageTable[i].physicalPage);
+        }
+    }
+    delete openfile;    
+}
 //----------------------------------------------------------------------
 // Machine::Debugger
 // 	Primitive debugger for user programs.  Note that we can't use
